@@ -1,18 +1,15 @@
-// BuildImage: build, scan, push and delete the Docker image
-// Usage: BuildImage(imageName, imageTag)
-def call(String imageName, String imageTag, String credentialsId = "dockerhub") {
-    echo "BuildImage: ${imageName}:${imageTag}"
+def call(Map config) {
+    def fullImage = "${config.imageName}:${config.imageTag}"
 
-    sh "docker build -t ${imageName}:${imageTag} ."
+    echo "BuildImage: ${fullImage}"
+    sh "docker build -t ${fullImage} ."
 
-    sh "trivy image --cache-dir /opt/trivy-cache --no-progress --severity HIGH,CRITICAL --exit-code 0 ${imageName}"
-    
-    withCredentials([usernamePassword(credentialsId: credentialsId,
-                                      usernameVariable: "DH_USER",
-                                      passwordVariable: "DH_PASS")]) {
-        sh "echo \"\$DH_PASS\" | docker login -u \"\$DH_USER\" --password-stdin"
-        sh "docker push ${imageName}:${imageTag}"
+    sh "trivy image --cache-dir /opt/trivy-cache --no-progress --severity HIGH,CRITICAL --exit-code 0 ${fullImage}"
+
+    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+        sh "docker push ${fullImage}"
     }
 
-    sh "docker rmi ${imageName}:${imageTag}"
+    sh "docker rmi ${fullImage}"
 }
