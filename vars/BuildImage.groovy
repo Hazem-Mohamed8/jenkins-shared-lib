@@ -5,8 +5,8 @@ def call(String imageName, String imageTag, String credentialsId = "dockerhub") 
 
     sh "docker build -t ${imageName}:${imageTag} ."
 
-    sh "trivy image --no-progress --severity HIGH,CRITICAL --exit-code 0 ${imageName}:${imageTag}"
-
+    sh "trivy image --cache-dir /opt/trivy-cache --no-progress --severity HIGH,CRITICAL --exit-code 0 ${imageName}"
+    
     withCredentials([usernamePassword(credentialsId: credentialsId,
                                       usernameVariable: "DH_USER",
                                       passwordVariable: "DH_PASS")]) {
